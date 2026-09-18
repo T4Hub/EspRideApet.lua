@@ -15,6 +15,52 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
 })
 
+-- ================= DISCORD WEBHOOK CONFIG =================
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
+
+local function sendDiscordWebhook(title, description, colorHex)
+    local HttpService = game:GetService("HttpService")
+    local success, err = pcall(function()
+        local data = {
+            ["embeds"] = {{
+                ["title"] = title,
+                ["description"] = description,
+                ["color"] = colorHex or 65280, -- Default Green
+                ["footer"] = {
+                    ["text"] = "Taufan Hub x Aress AI - Infinite Rare Egg Detector"
+                }
+            }}
+        }
+        local body = HttpService:JSONEncode(data)
+        local headers = {["content-type"] = "application/json"}
+        
+        -- Support multiple exploit environments
+        if syn and syn.request then
+            syn.request({Url = WEBHOOK_URL, Method = "POST", Headers = headers, Body = body})
+        elseif http_request then
+            http_request({Url = WEBHOOK_URL, Method = "POST", Headers = headers, Body = body})
+        elseif request then
+            request({Url = WEBHOOK_URL, Method = "POST", Headers = headers, Body = body})
+        else
+            HttpService:PostAsync(WEBHOOK_URL, body)
+        end
+    end)
+    if not success then
+        warn("Webhook Error: " .. tostring(err))
+    end
+end
+
+-- Kirim notifikasi saat script pertama kali berhasil di-load
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local playerName = Players.LocalPlayer and Players.LocalPlayer.Name or "Unknown"
+    sendDiscordWebhook(
+        "🚀 TAUFAN HUB LOADED", 
+        "Player **" .. playerName .."** baru aja nge-load script Taufan Hub dengan Infinite Rare Egg Detector!", 
+        3447003 -- Warna Biru
+    )
+end)
+
 local Esptab = Window:CreateTab("🥚 ESP Menu", 4483362458)
 local TpTab = Window:CreateTab("🌀 Teleport List", 4483362458)
 local MoveTab = Window:CreateTab("⚡ Movement", 4483362458)
@@ -50,12 +96,60 @@ local function getEggColor(nameLower)
     end
 end
 
+-- ================= RARE EGG SPAWN DETECTOR (INFINITE WEBHOOK) =================
+local trackedSpawnedEggs = {}
+
+local function checkEggSpawn(modelTarget)
+    if modelTarget and modelTarget:IsA("Model") then
+        local realName = modelTarget.Name
+        local nameLower = string.lower(realName)
+        
+        -- Cek apakah egg termasuk Blackhole atau Cherub
+        if nameLower:find("blackhole") or nameLower:find("cherub") then
+            if not trackedSpawnedEggs[modelTarget] then
+                trackedSpawnedEggs[modelTarget] = true
+                
+                -- Kirim webhook otomatis setiap kali egg langka spawn baru
+                sendDiscordWebhook(
+                    "🚨 RARE EGG SPAWN DETECTED! 🚨",
+                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera masuk game dan tangkap sekarang!",
+                    16711680 -- Warna Merah Menyala
+                )
+                
+                -- Reset cache otomatis saat egg hancur/diambil, jadi spawn berikutnya pasti bunyi lagi!
+                modelTarget.Destroying:Connect(function()
+                    trackedSpawnedEggs[modelTarget] = nil
+                end)
+            end
+        end
+    end
+end
+
+local Workspace = game:GetService("Workspace")
+local renderedEggsFolder = Workspace:FindFirstChild("RenderedEggs")
+
+if renderedEggsFolder then
+    for _, obj in pairs(renderedEggsFolder:GetChildren()) do
+        checkEggSpawn(obj)
+    end
+    renderedEggsFolder.ChildAdded:Connect(function(obj)
+        task.wait(0.2)
+        checkEggSpawn(obj)
+    end)
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("Model") then
+        task.wait(0.2)
+        checkEggSpawn(obj)
+    end
+end)
+
 -- ================= ESP REWRITE (COLOR-CODED & FILTERED) =================
 local espEnabled = false
 local connections = {}
 
 local function initESP()
-    local Workspace = game:GetService("Workspace")
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
 
@@ -142,7 +236,6 @@ local function initESP()
     end
 
     -- Scan RenderedEggs folder
-    local renderedEggsFolder = Workspace:FindFirstChild("RenderedEggs")
     if renderedEggsFolder then
         for _, modelObj in pairs(renderedEggsFolder:GetChildren()) do
             applyCustomESP(modelObj)
@@ -220,8 +313,6 @@ local function refreshEggList()
     eggListCache = {}
     eggInstanceMap = {}
     
-    local Workspace = game:GetService("Workspace")
-    
     local function evaluateModel(modelTarget)
         if modelTarget:IsA("Model") then
             local realName = modelTarget.Name
@@ -250,7 +341,6 @@ local function refreshEggList()
         end
     end
 
-    local renderedEggsFolder = Workspace:FindFirstChild("RenderedEggs")
     if renderedEggsFolder then
         for _, obj in pairs(renderedEggsFolder:GetChildren()) do
             evaluateModel(obj)
@@ -293,6 +383,9 @@ TpTab:CreateButton({
          end)
          if success and pivot then
             LocalPlayer.Character.HumanoidRootPart.CFrame = pivot + Vector3.new(0, 3, 0)
+            
+            sendDiscordWebhook("🌀 TELEPORT ACTION", "Player **" .. LocalPlayer.Name .. "** teleported to egg: `" .. selectedEggName .. "`", 65280)
+
             Rayfield:Notify({
                Title = "TELEPORT SUCCESS",
                Content = "Teleporting to target egg!",
@@ -314,7 +407,6 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Custom WalkSpeed Input Box
 MoveTab:CreateInput({
    Name = "Custom WalkSpeed",
    PlaceholderText = "Cth: 100",
@@ -331,7 +423,6 @@ MoveTab:CreateInput({
    end,
 })
 
--- Infinite Jump Logic
 local infJumpEnabled = false
 UserInputService.JumpRequest:Connect(function()
     if infJumpEnabled then
@@ -353,7 +444,6 @@ MoveTab:CreateToggle({
    end,
 })
 
--- Noclip Logic
 local noclipEnabled = false
 RunService.Stepped:Connect(function()
     if noclipEnabled then
@@ -381,7 +471,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Egg fragments excluded from ESP!",
+   Content = "Infinite Rare Egg Webhook Detector Active!",
    Duration = 5,
    Image = 4483362458,
 })
