@@ -15,7 +15,7 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
 })
 
--- ================= DISCORD WEBHOOK CONFIG =================
+-- ================= DISCORD WEBHOOK CONFIG (DELTA SPECIFIC) =================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
 
 local function sendAdvancedWebhook(title, description, statusText, eggName, colorHex)
@@ -24,7 +24,7 @@ local function sendAdvancedWebhook(title, description, statusText, eggName, colo
     local playerName = Players.LocalPlayer and Players.LocalPlayer.Name or "Unknown"
     local jobID = game.JobId ~= "" and game.JobId or "Private/Studio"
 
-    local success, err = pcall(function()
+    task.spawn(function()
         local data = {
             ["embeds"] = {{
                 ["title"] = title,
@@ -47,46 +47,45 @@ local function sendAdvancedWebhook(title, description, statusText, eggName, colo
                         ["inline"] = false
                     }
                 },
-                ["author"] = {
-                    ["name"] = "Taufan Hub • Security System",
-                    ["icon_url"] = "https://cdn.discordapp.com/emojis/1041692237077676082.webp?size=96&quality=lossless"
-                },
                 ["footer"] = {
-                    ["text"] = "Taufan Hub x Aress AI • " .. os.date("%H:%M:%S - %d/%m/%Y"),
-                    ["icon_url"] = "https://cdn.discordapp.com/emojis/1041692237077676082.webp?size=96&quality=lossless"
-                },
-                ["thumbnail"] = {
-                    ["url"] = "https://images.emojiterra.com/google/android-10/512px/1f4a3.png"
+                    ["text"] = "Taufan Hub x Aress AI • Delta Executor"
                 }
             }}
         }
-        local body = HttpService:JSONEncode(data)
-        local headers = {["content-type"] = "application/json"}
         
-        -- Support multiple exploit environments
-        if syn and syn.request then
-            syn.request({Url = WEBHOOK_URL, Method = "POST", Headers = headers, Body = body})
-        elseif http_request then
-            http_request({Url = WEBHOOK_URL, Method = "POST", Headers = headers, Body = body})
-        elseif request then
-            request({Url = WEBHOOK_URL, Method = "POST", Headers = headers, Body = body})
+        local body = HttpService:JSONEncode(data)
+        
+        -- Format request khusus Delta Executor
+        local req = (syn and syn.request) or (http and http.request) or http_request or request
+        if req then
+            local successReq, errReq = pcall(function()
+                req({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json",
+                        ["User-Agent"] = "Mozilla/5.0"
+                    },
+                    Body = body
+                })
+            end)
+            if not successReq then
+                warn("Delta Webhook Error: " .. tostring(errReq))
+            end
         else
-            HttpService:PostAsync(WEBHOOK_URL, body)
+            warn("Executor lu tidak mendukung fungsi HTTP Request!")
         end
     end)
-    if not success then
-        warn("Webhook Error: " .. tostring(err))
-    end
 end
 
 -- Kirim notifikasi saat script pertama kali berhasil di-load
 task.spawn(function()
     sendAdvancedWebhook(
-        "🚀 ARESS HUB LOADED", 
-        "Script berhasil diinjeksikan dengan sistem **Modern Infinite Rare Egg Detector**.", 
+        "🚀 TAUFAN HUB LOADED", 
+        "Script berhasil diinjeksikan di Delta Executor dengan sistem **Infinite Rare Egg Detector**.", 
         "Ready to Hunt", 
         "None",
-        3447003 -- Warna Biru Modern
+        3447003
     )
 end)
 
@@ -125,7 +124,7 @@ local function getEggColor(nameLower)
     end
 end
 
--- ================= RARE EGG SPAWN DETECTOR (MODERN WEBHOOK) =================
+-- ================= RARE EGG SPAWN DETECTOR (DELTA WEBHOOK) =================
 local trackedSpawnedEggs = {}
 
 local function checkEggSpawn(modelTarget)
@@ -137,13 +136,12 @@ local function checkEggSpawn(modelTarget)
             if not trackedSpawnedEggs[modelTarget] then
                 trackedSpawnedEggs[modelTarget] = true
                 
-                -- Kirim webhook dengan format modern field & thumbnail
                 sendAdvancedWebhook(
-                    "🚨 EGG SPAWN DETECTED! 🚨",
-                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!<@460491070522916868>",
+                    "🚨 <@460491070522916868> EGG SPAWN DETECTED! 🚨",
+                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!",
                     "Target Spotted",
                     realName,
-                    16711680 -- Merah Menyala Elegan
+                    16711680
                 )
                 
                 modelTarget.Destroying:Connect(function()
@@ -492,7 +490,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Ultra-Modern Webhook System Ready!",
+   Content = "Delta Webhook System Ready!",
    Duration = 5,
    Image = 4483362458,
 })
