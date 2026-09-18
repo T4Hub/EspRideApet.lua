@@ -16,18 +16,47 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- ================= DISCORD WEBHOOK CONFIG =================
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
+local WEBHOOK_URL = "URL_DISCORD_WEBHOOK_LU_DISINI"
 
-local function sendDiscordWebhook(title, description, colorHex)
+local function sendAdvancedWebhook(title, description, statusText, eggName, colorHex)
     local HttpService = game:GetService("HttpService")
+    local Players = game:GetService("Players")
+    local playerName = Players.LocalPlayer and Players.LocalPlayer.Name or "Unknown"
+    local jobID = game.JobId ~= "" and game.JobId or "Private/Studio"
+
     local success, err = pcall(function()
         local data = {
             ["embeds"] = {{
                 ["title"] = title,
                 ["description"] = description,
-                ["color"] = colorHex or 65280, -- Default Green
+                ["color"] = colorHex or 16711680,
+                ["fields"] = {
+                    {
+                        ["name"] = "📌 Status",
+                        ["value"] = "`" .. (statusText or "Active") .. "`",
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "👤 Hunter",
+                        ["value"] = "`" .. playerName .. "`",
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "🌐 Server ID",
+                        ["value"] = "```yaml\n" .. jobID .. "\n```",
+                        ["inline"] = false
+                    }
+                },
+                ["author"] = {
+                    ["name"] = "Taufan Hub • Security System",
+                    ["icon_url"] = "https://cdn.discordapp.com/emojis/1041692237077676082.webp?size=96&quality=lossless"
+                },
                 ["footer"] = {
-                    ["text"] = "Taufan Hub x Aress AI - Infinite Rare Egg Detector"
+                    ["text"] = "Taufan Hub x Aress AI • " .. os.date("%H:%M:%S - %d/%m/%Y"),
+                    ["icon_url"] = "https://cdn.discordapp.com/emojis/1041692237077676082.webp?size=96&quality=lossless"
+                },
+                ["thumbnail"] = {
+                    ["url"] = "https://images.emojiterra.com/google/android-10/512px/1f4a3.png"
                 }
             }}
         }
@@ -52,12 +81,12 @@ end
 
 -- Kirim notifikasi saat script pertama kali berhasil di-load
 task.spawn(function()
-    local Players = game:GetService("Players")
-    local playerName = Players.LocalPlayer and Players.LocalPlayer.Name or "Unknown"
-    sendDiscordWebhook(
-        "🚀 TAUFAN HUB LOADED", 
-        "Player **" .. playerName .."** baru aja nge-load script Taufan Hub dengan Infinite Rare Egg Detector!", 
-        3447003 -- Warna Biru
+    sendAdvancedWebhook(
+        "🚀 ARESS HUB LOADED", 
+        "Script berhasil diinjeksikan dengan sistem **Modern Infinite Rare Egg Detector**.", 
+        "Ready to Hunt", 
+        "None",
+        3447003 -- Warna Biru Modern
     )
 end)
 
@@ -68,35 +97,35 @@ local MoveTab = Window:CreateTab("⚡ Movement", 4483362458)
 -- ================= COLOR ASSIGNMENT MAPPING =================
 local function getEggColor(nameLower)
     if nameLower:find("galaxy") then
-        return Color3.fromRGB(138, 43, 226) -- Purple / Violet
+        return Color3.fromRGB(138, 43, 226)
     elseif nameLower:find("gold") or nameLower:find("golden") then
-        return Color3.fromRGB(255, 215, 0)   -- Gold / Yellow
+        return Color3.fromRGB(255, 215, 0)
     elseif nameLower:find("diamond") then
-        return Color3.fromRGB(0, 255, 255)   -- Cyan / Bright Blue
+        return Color3.fromRGB(0, 255, 255)
     elseif nameLower:find("sinister") then
-        return Color3.fromRGB(255, 0, 0)     -- Red
+        return Color3.fromRGB(255, 0, 0)
     elseif nameLower:find("slime") then
-        return Color3.fromRGB(50, 205, 50)   -- Lime Green
+        return Color3.fromRGB(50, 205, 50)
     elseif nameLower:find("mushroom") then
-        return Color3.fromRGB(255, 105, 180) -- Hot Pink
+        return Color3.fromRGB(255, 105, 180)
     elseif nameLower:find("flower") then
-        return Color3.fromRGB(255, 192, 203) -- Pink
+        return Color3.fromRGB(255, 192, 203)
     elseif nameLower:find("skull") or nameLower:find("soul") then
-        return Color3.fromRGB(128, 128, 128) -- Gray / Silver
+        return Color3.fromRGB(128, 128, 128)
     elseif nameLower:find("glass") or nameLower:find("ice") then
-        return Color3.fromRGB(173, 216, 230) -- Light Blue
+        return Color3.fromRGB(173, 216, 230)
     elseif nameLower:find("stone") or nameLower:find("leaf") then
-        return Color3.fromRGB(160, 82, 45)   -- Sienna / Earthy
+        return Color3.fromRGB(160, 82, 45)
     elseif nameLower:find("blackhole") then
-        return Color3.fromRGB(75, 0, 130)    -- Indigo / Dark
+        return Color3.fromRGB(75, 0, 130)
     elseif nameLower:find("easter") then
-        return Color3.fromRGB(255, 165, 0)   -- Orange
+        return Color3.fromRGB(255, 165, 0)
     else
-        return Color3.fromRGB(255, 255, 255) -- Default White
+        return Color3.fromRGB(255, 255, 255)
     end
 end
 
--- ================= RARE EGG SPAWN DETECTOR (INFINITE WEBHOOK) =================
+-- ================= RARE EGG SPAWN DETECTOR (MODERN WEBHOOK) =================
 local trackedSpawnedEggs = {}
 
 local function checkEggSpawn(modelTarget)
@@ -104,19 +133,19 @@ local function checkEggSpawn(modelTarget)
         local realName = modelTarget.Name
         local nameLower = string.lower(realName)
         
-        -- Cek apakah egg termasuk Blackhole atau Cherub
         if nameLower:find("blackhole") or nameLower:find("cherub") then
             if not trackedSpawnedEggs[modelTarget] then
                 trackedSpawnedEggs[modelTarget] = true
                 
-                -- Kirim webhook otomatis setiap kali egg langka spawn baru
-                sendDiscordWebhook(
-                    "🚨 RARE EGG SPAWN DETECTED! 🚨",
-                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera masuk game dan tangkap sekarang!",
-                    16711680 -- Warna Merah Menyala
+                -- Kirim webhook dengan format modern field & thumbnail
+                sendAdvancedWebhook(
+                    "🚨 EGG SPAWN DETECTED! 🚨",
+                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!<@460491070522916868>",
+                    "Target Spotted",
+                    realName,
+                    16711680 -- Merah Menyala Elegan
                 )
                 
-                -- Reset cache otomatis saat egg hancur/diambil, jadi spawn berikutnya pasti bunyi lagi!
                 modelTarget.Destroying:Connect(function()
                     trackedSpawnedEggs[modelTarget] = nil
                 end)
@@ -162,7 +191,6 @@ local function initESP()
             local isRenderedEgg = modelTarget.Parent and modelTarget.Parent.Name == "RenderedEggs"
             local isTargetEgg = nameLower:find("egg") or nameLower:find("cherub")
 
-            -- Exclude common/unwanted eggs, display/tracker items, dan egg fragment
             local isExcluded = nameLower:find("white egg") or 
                                nameLower:find("brown egg") or 
                                nameLower:find("cracked egg") or 
@@ -173,7 +201,6 @@ local function initESP()
                                nameLower:find("eggfragment") or
                                nameLower:find("fragment")
 
-            -- Exclude non-egg models or irrelevant items
             local isIgnored = nameLower:find("trex") or nameLower:find("t-rex") or nameLower:find("giraffe") or nameLower:find("cheetah") or nameLower:find("cerberus") or nameLower:find("unicorn") or nameLower:find("phoenix") or nameLower:find("dragon") or nameLower:find("player")
 
             if (isRenderedEgg or isTargetEgg) and not isExcluded and not isIgnored then
@@ -182,10 +209,8 @@ local function initESP()
                     espFolder.Name = "TaufanCleanESP"
                     espFolder.Parent = modelTarget
 
-                    -- Get specific color based on egg type
                     local assignedColor = getEggColor(nameLower)
 
-                    -- Highlight with specific color
                     local highlight = Instance.new("Highlight")
                     highlight.Name = "HighlightESP"
                     highlight.Adornee = modelTarget
@@ -195,7 +220,6 @@ local function initESP()
                     highlight.OutlineTransparency = 0
                     highlight.Parent = espFolder
 
-                    -- Safe BillboardGui for Distance Tag
                     local billboard = Instance.new("BillboardGui")
                     billboard.Name = "DistanceTag"
                     billboard.Adornee = modelTarget:FindFirstChild("Handle") or modelTarget:FindFirstChild("RootPart") or modelTarget
@@ -215,7 +239,6 @@ local function initESP()
                     textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
                     textLabel.Text = realName
 
-                    -- Real-time distance updater loop
                     local taskC = task.spawn(function()
                         while espEnabled and billboard and billboard.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
                             local successDist, distance = pcall(function()
@@ -235,7 +258,6 @@ local function initESP()
         end
     end
 
-    -- Scan RenderedEggs folder
     if renderedEggsFolder then
         for _, modelObj in pairs(renderedEggsFolder:GetChildren()) do
             applyCustomESP(modelObj)
@@ -248,7 +270,6 @@ local function initESP()
         table.insert(connections, c1)
     end
 
-    -- Scan whole Workspace to catch eggs elsewhere
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") then
             applyCustomESP(obj)
@@ -384,7 +405,7 @@ TpTab:CreateButton({
          if success and pivot then
             LocalPlayer.Character.HumanoidRootPart.CFrame = pivot + Vector3.new(0, 3, 0)
             
-            sendDiscordWebhook("🌀 TELEPORT ACTION", "Player **" .. LocalPlayer.Name .. "** teleported to egg: `" .. selectedEggName .. "`", 65280)
+            sendAdvancedWebhook("🌀 TELEPORT ACTION", "Player berhasil melakukan teleportasi ke koordinat target.", "Teleported", selectedEggName, 65280)
 
             Rayfield:Notify({
                Title = "TELEPORT SUCCESS",
@@ -444,8 +465,8 @@ MoveTab:CreateToggle({
    end,
 })
 
-local noclipEnabled = false
-RunService.Stepped:Connect(function()
+local noclipEnabled, noclipConnection = false, nil
+noclipConnection = RunService.Stepped:Connect(function()
     if noclipEnabled then
         local character = LocalPlayer.Character
         if character then
@@ -471,7 +492,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Infinite Rare Egg Webhook Detector Active!",
+   Content = "Ultra-Modern Webhook System Ready!",
    Duration = 5,
    Image = 4483362458,
 })
