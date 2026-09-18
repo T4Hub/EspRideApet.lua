@@ -68,21 +68,19 @@ local function initESP()
             local isRenderedEgg = modelTarget.Parent and modelTarget.Parent.Name == "RenderedEggs"
             local isTargetEgg = nameLower:find("egg") or nameLower:find("cherub")
 
-            -- Exclude common/unwanted eggs and display/tracker items
+            -- Exclude common/unwanted eggs, display/tracker items, dan egg fragment
             local isExcluded = nameLower:find("white egg") or 
                                nameLower:find("brown egg") or 
                                nameLower:find("cracked egg") or 
                                nameLower:find("displayegg") or 
                                nameLower:find("heldeggdisplay") or 
                                nameLower:find("eggo") or 
-                               nameLower:find("eggtracker")
+                               nameLower:find("eggtracker") or 
+                               nameLower:find("eggfragment") or
+                               nameLower:find("fragment")
 
             -- Exclude non-egg models or irrelevant items
-            local isIgnored = nameLower:find("trex") or nameLower:find("t-rex") or 
-                              nameLower:find("giraffe") or nameLower:find("cheetah") or 
-                              nameLower:find("cerberus") or nameLower:find("unicorn") or 
-                              nameLower:find("phoenix") or nameLower:find("dragon") or 
-                              nameLower:find("player")
+            local isIgnored = nameLower:find("trex") or nameLower:find("t-rex") or nameLower:find("giraffe") or nameLower:find("cheetah") or nameLower:find("cerberus") or nameLower:find("unicorn") or nameLower:find("phoenix") or nameLower:find("dragon") or nameLower:find("player")
 
             if (isRenderedEgg or isTargetEgg) and not isExcluded and not isIgnored then
                 if not modelTarget:FindFirstChild("TaufanCleanESP") then
@@ -191,7 +189,7 @@ Esptab:CreateToggle({
       if Value then
          espEnabled = true
          initESP()
-         Rayfield:Notify({Title = "ESP ENABLED", Content = "Color-coded ESP active for unique eggs!", Duration = 3, Image = 4483362458})
+         Rayfield:Notify({Title = "ESP ENABLED", Content = "Egg fragments excluded from ESP!", Duration = 3, Image = 4483362458})
       else
          clearESP()
          Rayfield:Notify({Title = "ESP DISABLED", Content = "Cleared all ESP markers.", Duration = 3, Image = 4483362458})
@@ -238,13 +236,11 @@ local function refreshEggList()
                                nameLower:find("displayegg") or 
                                nameLower:find("heldeggdisplay") or 
                                nameLower:find("eggo") or 
-                               nameLower:find("eggtracker")
-                               
-            local isIgnored = nameLower:find("trex") or nameLower:find("t-rex") or 
-                              nameLower:find("giraffe") or nameLower:find("cheetah") or 
-                              nameLower:find("cerberus") or nameLower:find("unicorn") or 
-                              nameLower:find("phoenix") or nameLower:find("dragon") or 
-                              nameLower:find("player")
+                               nameLower:find("eggtracker") or 
+                               nameLower:find("eggfragment") or
+                               nameLower:find("fragment")
+
+            local isIgnored = nameLower:find("trex") or nameLower:find("t-rex") or nameLower:find("giraffe") or nameLower:find("cheetah") or nameLower:find("cerberus") or nameLower:find("unicorn") or nameLower:find("phoenix") or nameLower:find("dragon") or nameLower:find("player")
 
             if (isRenderedEgg or isTargetEgg) and not isExcluded and not isIgnored then
                 local uniqueKey = realName .. " (" .. math.random(100, 999) .. ")"
@@ -312,46 +308,28 @@ TpTab:CreateButton({
    end,
 })
 
--- ================= MOVEMENT (SPEED, INF JUMP & NOCLIP) =================
+-- ================= MOVEMENT (CUSTOM INPUT WALKSPEED, INF JUMP & NOCLIP) =================
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- WalkSpeed State
-local speedEnabled = false
-local customSpeed = 16
-
-MoveTab:CreateToggle({
-   Name = "Enable Custom WalkSpeed",
-   CurrentValue = false,
-   Flag = "SpeedToggle",
-   Callback = function(Value)
-      speedEnabled = Value
-      local msg = Value and "SPEED ENABLED ⚡" or "SPEED DISABLED ❌"
-      Rayfield:Notify({Title = "WalkSpeed", Content = msg, Duration = 2, Image = 4483362458})
+-- Custom WalkSpeed Input Box
+MoveTab:CreateInput({
+   Name = "Custom WalkSpeed",
+   PlaceholderText = "Cth: 100",
+   RemoveTextAfterFocusLost = false,
+   Flag = "WalkSpeedInput",
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         pcall(function()
+            LocalPlayer.Character.Humanoid.WalkSpeed = num
+         end)
+         Rayfield:Notify({Title = "WalkSpeed Set", Content = "Speed changed to: " .. num, Duration = 2, Image = 4483362458})
+      end
    end,
 })
-
-MoveTab:CreateSlider({
-   Name = "WalkSpeed Value",
-   Range = {16, 250},
-   Increment = 1,
-   CurrentValue = 16,
-   Flag = "SpeedSlider",
-   Callback = function(Value)
-      customSpeed = Value
-   end,
-})
-
-RunService.Heartbeat:Connect(function()
-    if speedEnabled then
-        local character = LocalPlayer.Character
-        if character and character:FindFirstChildOfClass("Humanoid") then
-            character:FindFirstChildOfClass("Humanoid").WalkSpeed = customSpeed
-        end
-    end
-end)
 
 -- Infinite Jump Logic
 local infJumpEnabled = false
@@ -403,8 +381,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Display eggs and trackers excluded!",
+   Content = "Egg fragments excluded from ESP!",
    Duration = 5,
    Image = 4483362458,
 })
-
