@@ -15,17 +15,24 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false,
 })
 
--- ================= DISCORD WEBHOOK CONFIG (DELTA SPECIFIC) =================
+-- ================= DISCORD WEBHOOK CONFIG (DELTA SPECIFIC & AUTO-PING) =================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
+local MY_DISCORD_ID = "460491070522916868" -- Contoh: "123456789012345678"
 
-local function sendAdvancedWebhook(title, description, statusText, eggName, colorHex)
+local function sendAdvancedWebhook(title, description, statusText, eggName, colorHex, shouldPing)
     local HttpService = game:GetService("HttpService")
     local Players = game:GetService("Players")
     local playerName = Players.LocalPlayer and Players.LocalPlayer.Name or "Unknown"
     local jobID = game.JobId ~= "" and game.JobId or "Private/Studio"
 
     task.spawn(function()
+        local contentMessage = nil
+        if shouldPing and MY_DISCORD_ID ~= "" and MY_DISCORD_ID ~= "MASUKKAN_USER_ID_DISCORD_LU_DISINI" then
+            contentMessage = "<@" .. MY_DISCORD_ID .. "> **WAKTUNYA PANEN EGG LANGKA!**"
+        end
+
         local data = {
+            ["content"] = contentMessage,
             ["embeds"] = {{
                 ["title"] = title,
                 ["description"] = description,
@@ -43,22 +50,21 @@ local function sendAdvancedWebhook(title, description, statusText, eggName, colo
                     },
                     {
                         ["name"] = "🌐 Server ID",
-                        ["value"] = "```yaml\n" .. jobID .. "\n```",
-                        ["inline"] = false
+                        ["value"] = "`" .. string.sub(jobID, 1, 13) .."...`",
+                        ["inline"] = true
                     }
                 },
                 ["footer"] = {
-                    ["text"] = "Taufan Hub x Aress AI • Delta Executor"
+                    ["text"] = "AressHUB • Delta Engine"
                 }
             }}
         }
         
         local body = HttpService:JSONEncode(data)
         
-        -- Format request khusus Delta Executor
         local req = (syn and syn.request) or (http and http.request) or http_request or request
         if req then
-            local successReq, errReq = pcall(function()
+            pcall(function()
                 req({
                     Url = WEBHOOK_URL,
                     Method = "POST",
@@ -69,23 +75,19 @@ local function sendAdvancedWebhook(title, description, statusText, eggName, colo
                     Body = body
                 })
             end)
-            if not successReq then
-                warn("Delta Webhook Error: " .. tostring(errReq))
-            end
-        else
-            warn("Executor lu tidak mendukung fungsi HTTP Request!")
         end
     end)
 end
 
--- Kirim notifikasi saat script pertama kali berhasil di-load
+-- Kirim notifikasi saat script pertama kali berhasil di-load (Tanpa Ping)
 task.spawn(function()
     sendAdvancedWebhook(
-        "🚀 TAUFAN HUB LOADED", 
+        "🚀 Aress HUB LOADED", 
         "Script berhasil diinjeksikan di Delta Executor dengan sistem **Infinite Rare Egg Detector**.", 
         "Ready to Hunt", 
         "None",
-        3447003
+        3447003,
+        false
     )
 end)
 
@@ -124,7 +126,7 @@ local function getEggColor(nameLower)
     end
 end
 
--- ================= RARE EGG SPAWN DETECTOR (DELTA WEBHOOK) =================
+-- ================= RARE EGG SPAWN DETECTOR (WITH AUTO-PING) =================
 local trackedSpawnedEggs = {}
 
 local function checkEggSpawn(modelTarget)
@@ -136,12 +138,14 @@ local function checkEggSpawn(modelTarget)
             if not trackedSpawnedEggs[modelTarget] then
                 trackedSpawnedEggs[modelTarget] = true
                 
+                -- DI SINI MENGGUNAKAN 'true' AGAR OTOMATIS MENG-TAG DISCORD LU
                 sendAdvancedWebhook(
-                    "🚨 <@460491070522916868> EGG SPAWN DETECTED! 🚨",
-                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!",
+                    "🚨 EGG SPAWN DETECTED! 🚨",
+                    "🥚Egg langka🥚 **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!",
                     "Target Spotted",
                     realName,
-                    16711680
+                    16711680,
+                    true
                 )
                 
                 modelTarget.Destroying:Connect(function()
@@ -403,7 +407,8 @@ TpTab:CreateButton({
          if success and pivot then
             LocalPlayer.Character.HumanoidRootPart.CFrame = pivot + Vector3.new(0, 3, 0)
             
-            sendAdvancedWebhook("🌀 TELEPORT ACTION", "Player berhasil melakukan teleportasi ke koordinat target.", "Teleported", selectedEggName, 65280)
+            -- Teleport tanpa ping (false)
+            sendAdvancedWebhook("🌀 TELEPORT ACTION", "Player berhasil melakukan teleportasi ke koordinat target.", "Teleported", selectedEggName, 65280, false)
 
             Rayfield:Notify({
                Title = "TELEPORT SUCCESS",
@@ -490,7 +495,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Delta Webhook System Ready!",
+   Content = "Compact & Auto-Ping Webhook Ready!",
    Duration = 5,
    Image = 4483362458,
 })
