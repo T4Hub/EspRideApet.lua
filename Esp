@@ -8,22 +8,49 @@ if not success or not Rayfield then
 end
 
 local Window = Rayfield:CreateWindow({
-   Name = "TAUFAN HUB - ULTIMATE EGG ESP & MOVEMENT",
+   Name = "Aress HUB",
    LoadingTitle = "Loading Hub...",
-   LoadingSubtitle = "by Taufan & Aress",
+   LoadingSubtitle = "by Aress",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false,
 })
 
--- ================= DISCORD WEBHOOK CONFIG (DELTA SPECIFIC & AUTO-PING) =================
+-- ================= DISCORD WEBHOOK CONFIG =================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
 local MY_DISCORD_ID = "460491070522916868" -- Contoh: "123456789012345678"
 
-local function sendAdvancedWebhook(title, description, statusText, eggName, colorHex, shouldPing)
+local function getPlayerIncome()
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+    if player then
+        -- Sesuai struktur Dex: folder leaderstats, value Income/s
+        local leaderstatFolder = player:FindFirstChild("leaderstats") or player:FindFirstChild("leaderstat")
+        if leaderstatFolder then
+            local incomeStat = leaderstatFolder:FindFirstChild("Income/s") or leaderstatFolder:FindFirstChild("income/s")
+            if incomeStat then
+                return incomeStat.Value
+            end
+        end
+    end
+    return 0
+end
+
+local function sendAdvancedWebhook(title, description, customStatusText, eggName, colorHex, shouldPing)
     local HttpService = game:GetService("HttpService")
     local Players = game:GetService("Players")
     local playerName = Players.LocalPlayer and Players.LocalPlayer.Name or "Unknown"
     local jobID = game.JobId ~= "" and game.JobId or "Private/Studio"
+    
+    local incomeVal = getPlayerIncome()
+    local formattedIncome = tostring(incomeVal)
+    
+    if incomeVal >= 1000 then
+        formattedIncome = string.reverse(string.gsub(string.reverse(tostring(incomeVal)), "(%d%d%d)", "%1,"))
+        formattedIncome = string.reverse(formattedIncome)
+        if string.sub(formattedIncome, 1, 1) == "," then
+            formattedIncome = string.sub(formattedIncome, 2)
+        end
+    end
 
     task.spawn(function()
         local contentMessage = nil
@@ -39,23 +66,26 @@ local function sendAdvancedWebhook(title, description, statusText, eggName, colo
                 ["color"] = colorHex or 16711680,
                 ["fields"] = {
                     {
-                        ["name"] = "📌 Status",
-                        ["value"] = "`" .. (statusText or "Active") .. "`",
-                        ["inline"] = true
+                        ["name"] = "👤 Account",
+                        ["value"] = "`" .. playerName .. "`",
+                        ["inline"] = false
                     },
                     {
-                        ["name"] = "👤 Hunter",
-                        ["value"] = "`" .. playerName .. "`",
-                        ["inline"] = true
+                        ["name"] = "💵 MONEY",
+                        ["value"] = "`" .. formattedIncome .. "/s`",
+                        ["inline"] = false
                     },
                     {
                         ["name"] = "🌐 Server ID",
-                        ["value"] = "`" .. string.sub(jobID, 1, 13) .."...`",
-                        ["inline"] = true
+                        ["value"] = "```yaml\n" .. jobID .. "\n```",
+                        ["inline"] = false
                     }
                 },
+                ["thumbnail"] = {
+                    ["url"] = "https://images.emojiterra.com/google/android-10/512px/1f4a3.png"
+                },
                 ["footer"] = {
-                    ["text"] = "AressHUB • Delta Engine"
+                    ["text"] = "AressHUB • " .. os.date("%H:%M")
                 }
             }}
         }
@@ -79,12 +109,12 @@ local function sendAdvancedWebhook(title, description, statusText, eggName, colo
     end)
 end
 
--- Kirim notifikasi saat script pertama kali berhasil di-load (Tanpa Ping)
+-- Kirim notifikasi saat script pertama kali berhasil di-load
 task.spawn(function()
     sendAdvancedWebhook(
-        "🚀 Aress HUB LOADED", 
+        "✅ ARESS HUB LOADED", 
         "Script berhasil diinjeksikan di Delta Executor dengan sistem **Infinite Rare Egg Detector**.", 
-        "Ready to Hunt", 
+        "Active", 
         "None",
         3447003,
         false
@@ -126,7 +156,7 @@ local function getEggColor(nameLower)
     end
 end
 
--- ================= RARE EGG SPAWN DETECTOR (WITH AUTO-PING) =================
+-- ================= RARE EGG SPAWN DETECTOR =================
 local trackedSpawnedEggs = {}
 
 local function checkEggSpawn(modelTarget)
@@ -138,10 +168,9 @@ local function checkEggSpawn(modelTarget)
             if not trackedSpawnedEggs[modelTarget] then
                 trackedSpawnedEggs[modelTarget] = true
                 
-                -- DI SINI MENGGUNAKAN 'true' AGAR OTOMATIS MENG-TAG DISCORD LU
                 sendAdvancedWebhook(
-                    "🚨 EGG SPAWN DETECTED! 🚨",
-                    "🥚Egg langka🥚 **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!",
+                    "🚨EGG SPAWN DETECTED!",
+                    "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!",
                     "Target Spotted",
                     realName,
                     16711680,
@@ -176,7 +205,7 @@ Workspace.DescendantAdded:Connect(function(obj)
     end
 end)
 
--- ================= ESP REWRITE (COLOR-CODED & FILTERED) =================
+-- ================= ESP REWRITE =================
 local espEnabled = false
 local connections = {}
 
@@ -407,7 +436,6 @@ TpTab:CreateButton({
          if success and pivot then
             LocalPlayer.Character.HumanoidRootPart.CFrame = pivot + Vector3.new(0, 3, 0)
             
-            -- Teleport tanpa ping (false)
             sendAdvancedWebhook("🌀 TELEPORT ACTION", "Player berhasil melakukan teleportasi ke koordinat target.", "Teleported", selectedEggName, 65280, false)
 
             Rayfield:Notify({
@@ -425,7 +453,7 @@ TpTab:CreateButton({
    end,
 })
 
--- ================= MOVEMENT (CUSTOM INPUT WALKSPEED, INF JUMP & NOCLIP) =================
+-- ================= MOVEMENT =================
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -495,7 +523,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Compact & Auto-Ping Webhook Ready!",
+   Content = "Income Webhook Ready!",
    Duration = 5,
    Image = 4483362458,
 })
