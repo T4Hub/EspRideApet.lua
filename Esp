@@ -16,7 +16,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- ================= DISCORD WEBHOOK CONFIG =================
-local WEBHOOK_URL = "URL_DISCORD_WEBHOOK_LU_DISINI"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
 
 local function sendAdvancedWebhook(title, description, statusText, eggName, colorHex)
     local HttpService = game:GetService("HttpService")
