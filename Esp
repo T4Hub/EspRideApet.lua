@@ -10,7 +10,7 @@ end
 local Window = Rayfield:CreateWindow({
    Name = "TAUFAN HUB - ULTIMATE EGG ESP & MOVEMENT",
    LoadingTitle = "Loading Hub...",
-   LoadingSubtitle = "by Taufan & Aress",
+   LoadingSubtitle = "by Aress",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false,
 })
