@@ -17,18 +17,18 @@ local Window = Rayfield:CreateWindow({
 
 -- ================= DISCORD WEBHOOK CONFIG =================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1515755406490865674/8-fPWB0qCbtwawUT5yfzCgR44DnHPH-W8i4VglEPp1ZPBDJZIVTtJAAm2K7ibgvk6zNu"
-local MY_DISCORD_ID = "460491070522916868" -- Contoh: "123456789012345678"
+local MY_DISCORD_ID = "460491070522916868"
 
+-- Fungsi murni mengambil Cash dari SavedData
 local function getPlayerIncome()
     local Players = game:GetService("Players")
     local player = Players.LocalPlayer
     if player then
-        -- Sesuai struktur Dex: folder leaderstats, value Income/s
-        local leaderstatFolder = player:FindFirstChild("leaderstats") or player:FindFirstChild("leaderstat")
-        if leaderstatFolder then
-            local incomeStat = leaderstatFolder:FindFirstChild("Income/s") or leaderstatFolder:FindFirstChild("income/s")
-            if incomeStat then
-                return incomeStat.Value
+        local savedDataFolder = player:FindFirstChild("SavedData")
+        if savedDataFolder then
+            local cashStat = savedDataFolder:FindFirstChild("Cash")
+            if cashStat then
+                return cashStat.Value
             end
         end
     end
@@ -54,7 +54,7 @@ local function sendAdvancedWebhook(title, description, customStatusText, eggName
 
     task.spawn(function()
         local contentMessage = nil
-        if shouldPing and MY_DISCORD_ID ~= "" and MY_DISCORD_ID ~= "MASUKKAN_USER_ID_DISCORD_LU_DISINI" then
+        if shouldPing and MY_DISCORD_ID ~= "" then
             contentMessage = "<@" .. MY_DISCORD_ID .. "> **WAKTUNYA PANEN EGG LANGKA!**"
         end
 
@@ -72,7 +72,7 @@ local function sendAdvancedWebhook(title, description, customStatusText, eggName
                     },
                     {
                         ["name"] = "💵 MONEY",
-                        ["value"] = "`" .. formattedIncome .. "/s`",
+                        ["value"] = "`" .. formattedIncome .. "`",
                         ["inline"] = false
                     },
                     {
@@ -169,7 +169,7 @@ local function checkEggSpawn(modelTarget)
                 trackedSpawnedEggs[modelTarget] = true
                 
                 sendAdvancedWebhook(
-                    "🚨EGG SPAWN DETECTED!",
+                    "🚨 EGG SPAWN DETECTED!",
                     "Egg langka **" .. realName .. "** baru saja spawn di server!\nSegera amankan sebelum keduluan player lain!",
                     "Target Spotted",
                     realName,
@@ -523,7 +523,7 @@ MoveTab:CreateToggle({
 
 Rayfield:Notify({
    Title = "HUB LOADED SUCCESSFULLY",
-   Content = "Income Webhook Ready!",
+   Content = "SavedData Cash Webhook Ready!",
    Duration = 5,
    Image = 4483362458,
 })
