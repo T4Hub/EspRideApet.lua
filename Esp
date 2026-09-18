@@ -19,7 +19,7 @@ local Esptab = Window:CreateTab("🥚 ESP Menu", 4483362458)
 local TpTab = Window:CreateTab("🌀 Teleport List", 4483362458)
 local MoveTab = Window:CreateTab("⚡ Movement", 4483362458)
 
--- ================= COLOR ASSIGNMENT MAPPING =================
+-- ================= COLOR ASSIGNMENT MAPPING (RAINBOW ADDED) =================
 local function getEggColor(nameLower)
     if nameLower:find("galaxy") then
         return Color3.fromRGB(138, 43, 226) -- Purple / Violet
@@ -46,7 +46,8 @@ local function getEggColor(nameLower)
     elseif nameLower:find("easter") then
         return Color3.fromRGB(255, 165, 0)   -- Orange
     else
-        return Color3.fromRGB(255, 255, 255) -- Default White
+        -- Rainbow effect loop based on real-time tick
+        return Color3.fromHSV(tick() % 5 / 5, 1, 1)
     end
 end
 
@@ -88,14 +89,10 @@ local function initESP()
                     espFolder.Name = "TaufanCleanESP"
                     espFolder.Parent = modelTarget
 
-                    -- Get specific color based on egg type
-                    local assignedColor = getEggColor(nameLower)
-
-                    -- Highlight with specific color
+                    -- Highlight object setup
                     local highlight = Instance.new("Highlight")
                     highlight.Name = "HighlightESP"
                     highlight.Adornee = modelTarget
-                    highlight.FillColor = assignedColor
                     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                     highlight.FillTransparency = 0.4
                     highlight.OutlineTransparency = 0
@@ -110,6 +107,285 @@ local function initESP()
                     billboard.AlwaysOnTop = true
 
                     local textLabel = Instance.new("TextLabel")
+                    textLabel.Name = "InfoText"
+                    textLabel.Parent = billboard
+                    textLabel.BackgroundTransparency = 1
+                    textLabel.Size = UDim2.new(1, 0, 1, 0)
+                    textLabel.Font = Enum.Font.GothamBold
+                    textLabel.TextSize = 13
+                    textLabel.TextStrokeTransparency = 0
+                    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                    textLabel.Text = realName
+
+                    -- Real-time color updater & distance loop (handles Rainbow & Distance sync)
+                    local taskC = task.spawn(function()
+                        while espEnabled and billboard and billboard.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
+                            -- Dynamic color assignment per frame update
+                            local assignedColor = getEggColor(nameLower)
+                            highlight.FillColor = assignedColor
+                            textLabel.TextColor3 = assignedColor
+
+                            local successDist, distance = pcall(function()
+                                return math.floor((LocalPlayer.Character.HumanoidRootPart.Position - modelTarget:GetPivot().Position).Magnitude)
+                            end)
+                            if successDist then
+                                textLabel.Text = realName .. " [" .. distance .. "m]"
+                            end
+                            task.wait(0.1) -- Fast loop for smooth rainbow color shifting
+                        end
+                    end)
+                    table.insert(connections, taskC)
+
+                    billboard.Parent = espFolder
+                end
+            end
+        end
+    end
+
+    -- Scan RenderedEggs folder
+    local renderedEggsFolder = Workspace:FindFirstChild("RenderedEggs")
+    if renderedEggsFolder then
+        for _, modelObj in pairs(renderedEggsFolder:GetChildren()) do
+            applyCustomESP(modelObj)
+        end
+
+        local c1 = renderedEggsFolder.ChildAdded:Connect(function(modelObj)
+            task.wait(0.2)
+            applyCustomESP(modelObj)
+        end)
+        table.insert(connections, c1)
+    end
+
+    -- Scan whole Workspace to catch eggs elsewhere
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            applyCustomESP(obj)
+        end
+    end
+
+    local c2 = Workspace.DescendantAdded:Connect(function(obj)
+        if obj:IsA("Model") then
+            task.wait(0.2)
+            applyCustomESP(obj)
+        end
+    end)
+    table.insert(connections, c2)
+end
+
+local function clearESP()
+    espEnabled = false
+    local Workspace = game:GetService("Workspace")
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj.Name == "TaufanCleanESP" then
+            obj:Destroy()
+        end
+    end
+end
+
+Esptab:CreateToggle({
+   Name = "Enable Color-Coded ESP",
+   CurrentValue = false,
+   Flag = "EspToggle",
+   Callback = function(Value)
+      if Value then
+         espEnabled = true
+         initESP()
+         Rayfield:Notify({Title = "ESP ENABLED", Content = "Rainbow & Color-coded ESP active!", Duration = 3, Image = 4483362458})
+      else
+         clearESP()
+         Rayfield:Notify({Title = "ESP DISABLED", Content = "Cleared all ESP markers.", Duration = 3, Image = 4483362458})
+      end
+   end,
+})
+
+-- ================= DYNAMIC TELEPORT LIST =================
+local eggListCache = {}
+local eggInstanceMap = {}
+local selectedEggName = ""
+
+local eggDropdown = TpTab:CreateDropdown({
+   Name = "Select Target Egg",
+   Options = {"Refresh first to load list..."},
+   CurrentOption = "Refresh first to load list...",
+   Flag = "EggDropdownSelection",
+   Callback = function(Option)
+      if type(Option) == "table" then
+          selectedEggName = Option[1]
+      else
+          selectedEggName = Option
+      end
+   end,
+})
+
+local function refreshEggList()
+    eggListCache = {}
+    eggInstanceMap = {}
+    
+    local Workspace = game:GetService("Workspace")
+    
+    local function evaluateModel(modelTarget)
+        if modelTarget:IsA("Model") then
+            local realName = modelTarget.Name
+            local nameLower = string.lower(realName)
+
+            local isRenderedEgg = modelTarget.Parent and modelTarget.Parent.Name == "RenderedEggs"
+            local isTargetEgg = nameLower:find("egg") or nameLower:find("cherub")
+            
+            local isExcluded = nameLower:find("white egg") or 
+                               nameLower:find("brown egg") or 
+                               nameLower:find("cracked egg") or 
+                               nameLower:find("displayegg") or 
+                               nameLower:find("heldeggdisplay") or 
+                               nameLower:find("eggo") or 
+                               nameLower:find("eggtracker") or 
+                               nameLower:find("eggfragment") or
+                               nameLower:find("fragment")
+
+            local isIgnored = nameLower:find("trex") or nameLower:find("t-rex") or nameLower:find("giraffe") or nameLower:find("cheetah") or nameLower:find("cerberus") or nameLower:find("unicorn") or nameLower:find("phoenix") or nameLower:find("dragon") or nameLower:find("player")
+
+            if (isRenderedEgg or isTargetEgg) and not isExcluded and not isIgnored then
+                local uniqueKey = realName .. " (" .. math.random(100, 999) .. ")"
+                table.insert(eggListCache, uniqueKey)
+                eggInstanceMap[uniqueKey] = modelTarget
+            end
+        end
+    end
+
+    local renderedEggsFolder = Workspace:FindFirstChild("RenderedEggs")
+    if renderedEggsFolder then
+        for _, obj in pairs(renderedEggsFolder:GetChildren()) do
+            evaluateModel(obj)
+        end
+    end
+
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        evaluateModel(obj)
+    end
+
+    if #eggListCache == 0 then
+        table.insert(eggListCache, "No valid eggs found!")
+    end
+
+    eggDropdown:Refresh(eggListCache, true)
+    Rayfield:Notify({
+        Title = "LIST UPDATED",
+        Content = "Loaded color-coded egg list!",
+        Duration = 3,
+        Image = 4483362458,
+    })
+end
+
+TpTab:CreateButton({
+   Name = "🔄 Refresh Egg List",
+   Callback = function()
+      refreshEggList()
+   end,
+})
+
+TpTab:CreateButton({
+   Name = "🚀 Teleport to Selected Egg",
+   Callback = function()
+      local LocalPlayer = game:GetService("Players").LocalPlayer
+      local targetModel = eggInstanceMap[selectedEggName]
+      
+      if targetModel and targetModel.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+         local success, pivot = pcall(function()
+            return targetModel:GetPivot()
+         end)
+         if success and pivot then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = pivot + Vector3.new(0, 3, 0)
+            Rayfield:Notify({
+               Title = "TELEPORT SUCCESS",
+               Content = "Teleporting to target egg!",
+               Duration = 3,
+               Image = 4483362458,
+            })
+         else
+            Rayfield:Notify({Title = "TELEPORT FAILED", Content = "Egg position is invalid or missing!", Duration = 3})
+         end
+      else
+         Rayfield:Notify({Title = "TELEPORT FAILED", Content = "Please select a valid egg from the dropdown first!", Duration = 3})
+      end
+   end,
+})
+
+-- ================= MOVEMENT (CUSTOM INPUT WALKSPEED, INF JUMP & NOCLIP) =================
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Custom WalkSpeed Input Box
+MoveTab:CreateInput({
+   Name = "Custom WalkSpeed",
+   PlaceholderText = "Cth: 100",
+   RemoveTextAfterFocusLost = false,
+   Flag = "WalkSpeedInput",
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         pcall(function()
+            LocalPlayer.Character.Humanoid.WalkSpeed = num
+         end)
+         Rayfield:Notify({Title = "WalkSpeed Set", Content = "Speed changed to: " + num, Duration = 2, Image = 4483362458})
+      end
+   end,
+})
+
+-- Infinite Jump Logic
+local infJumpEnabled = false
+UserInputService.JumpRequest:Connect(function()
+    if infJumpEnabled then
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChildOfClass("Humanoid") then
+            character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Infinite Jump",
+   CurrentValue = false,
+   Flag = "InfJumpToggle",
+   Callback = function(Value)
+      infJumpEnabled = Value
+      local msg = Value and "ENABLED 🚀" or "DISABLED ❌"
+      Rayfield:Notify({Title = "Infinite Jump", Content = msg, Duration = 2, Image = 4483362458})
+   end,
+})
+
+-- Noclip Logic
+local noclipEnabled = false
+RunService.Stepped:Connect(function()
+    if noclipEnabled then
+        local character = LocalPlayer.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Noclip (Walk Through Walls)",
+   CurrentValue = false,
+   Flag = "NoclipToggle",
+   Callback = function(Value)
+      noclipEnabled = Value
+      local msg = Value and "ENABLED 👻" or "DISABLED ❌"
+      Rayfield:Notify({Title = "Noclip", Content = msg, Duration = 2, Image = 4483362458})
+   end,
+})
+
+Rayfield:Notify({
+   Title = "HUB LOADED SUCCESSFULLY",
+   Content = "Rainbow ESP & custom movement ready!",
+   Duration = 5,
+   Image = 4483362458,
+})
                     textLabel.Name = "InfoText"
                     textLabel.Parent = billboard
                     textLabel.BackgroundTransparency = 1
