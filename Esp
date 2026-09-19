@@ -164,7 +164,7 @@ local function checkEggSpawn(modelTarget)
         local realName = modelTarget.Name
         local nameLower = string.lower(realName)
         
-        if nameLower:find("blackhole") or nameLower:find("cherub") or nameLower:find("solaris") then
+        if nameLower:find("solaris") or nameLower:find("cherub") then
             if not trackedSpawnedEggs[modelTarget] then
                 trackedSpawnedEggs[modelTarget] = true
                 
